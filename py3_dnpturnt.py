@@ -14,13 +14,14 @@ import time
 
 # Argument Checking
 if (len(sys.argv) != 2): 
-	print("USAGE: python ./py3_modturnt.py <host>")
+	print("USAGE: python ./py3_dnpturnt.py <host>")
 	sys.exit()
 
 # host is passed in via cli arguments
 host=sys.argv[1]
-# modbus port
+# dnp3 port
 port=20000
+#assumes dnp3 master address=1 and dnp3 slave address=1024
 
 # make the socket and the connection to the host and port specified 
 try:
