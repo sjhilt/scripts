@@ -109,6 +109,17 @@ try:
                     click.echo('\t\t{:15s}{}\n\t\t{:15s}{}'.format('Bits:', banner['ssl']['dhparams']['bits'], 'Generator:', banner['ssl']['dhparams']['generator']))
                     if 'fingerprint' in banner['ssl']['dhparams']:
                         click.echo('\t\t{:15s}{}'.format('Fingerprint:', banner['ssl']['dhparams']['fingerprint']))
+                if 'cert' in banner['ssl']:
+                    if 'issued' in banner['ssl']['cert']:
+                        click.echo('\t|-- Cert Issued: {}'.format(banner['ssl']['cert']['issued']))
+                    if 'expires' in banner['ssl']['cert']:
+                        click.echo('\t|-- Cert Expires: {}'.format(banner['ssl']['cert']['expires']))
+                    if 'subject' in banner['ssl']['cert']:
+                        if 'CN' in banner['ssl']['cert']['subject']:
+                            click.echo('\t|-- Cert Commmon Name: {}'.format(banner['ssl']['cert']['subject']['CN']))
+                        if 'emailAddress' in banner['ssl']['cert']['subject']:
+                            click.echo('\t|-- Cert Issuer: {}'.format(banner['ssl']['cert']['subject']['emailAddress']))
+
             start = banner['data'].find('Fingerprint: ')
             if start > 0:
                 start += len('Fingerprint: ')
