@@ -1,6 +1,7 @@
 #####################################################
 # Script to pull the history of an IP address via
-# the shodan API. This just dumps out the raw JSON
+# the shodan API. This will print out the output much
+# like the shodan host command from the CLI interface.
 #  Author: Stephen Hilt
 #####################################################
 import shodan
