@@ -118,7 +118,7 @@ try:
                         if 'CN' in banner['ssl']['cert']['subject']:
                             click.echo('\t|-- Cert Commmon Name: {}'.format(banner['ssl']['cert']['subject']['CN']))
                         if 'emailAddress' in banner['ssl']['cert']['subject']:
-                            click.echo('\t|-- Cert Issuer: {}'.format(banner['ssl']['cert']['subject']['emailAddress']))
+                            click.echo('\t|-- Cert Email Address: {}'.format(banner['ssl']['cert']['subject']['emailAddress']))
 
             start = banner['data'].find('Fingerprint: ')
             if start > 0:
