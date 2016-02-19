@@ -15,7 +15,6 @@ try:
         api = shodan.Shodan(API_KEY):
 
         # Perform the search
-        query = "has_screenshot:true"
         total = api.count('has_screenshot:true')['total']
         page = randint(1, total / 100 + 1)
         results = api.search('has_screenshot:true', page=page)
