@@ -8,10 +8,7 @@
 import feedparser
 from slacker import Slacker
 import time
-import datetime
 
-
-t = datetime.datetime.now()
 #Setup to pull RSS feed example is ICS-CERT Alerts
 rss =feedparser.parse('https://ics-cert.us-cert.gov/alerts/alerts.xml')
 #setup slack via Slacker
