@@ -16,8 +16,20 @@ slack = Slacker('YOUR_API_KEY')
 # create current time based off RSS feeds format 
 # the minus -4 is for an offset of GMT to East Cost minus an hour since i'm running this 
 # as a cron job every how, so this will pull everything from the past hour
-date_time = "{}, {} {} {} {}:".format(time.strftime("%a"),time.strftime("%d"),time.strftime("%b"),time.strftime("%Y"),int(time.strftime("%H"))+4)
+day = time.strftime("%d")
+month = time.strftime("%b")
+year = time.strftime("%Y")
+hour = time.strftime("%H")
 
+if int(time.strftime("%H"))+4 < 23:
+	date_time = ", {:02d} {} {} {:02d}:".format(int(day), month, year, int(hour) + 4)
+else: 
+	hour = 24 - int(hour)
+	day = day + 1
+	print hour
+	date_time = ", {:02d} {} {} {:02d}:".format(day, month, year, hour)
+
+count = 0 
 # set a counter to 0 to loop through all the RSS feed entries
 count = 0
 while count < len(rss['entries']):
