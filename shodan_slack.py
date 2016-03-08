@@ -22,7 +22,7 @@ try:
         shodan_result = results['matches'][randint(0,num_results)]['ip_str']        
         SHODAN_MESSAGE = "https://www.shodan.io/host/{}/image".format(shodan_result)
 
-        slack.chat.post_message('#random', "Here is a Random host with a screeshot from SHODAN {}".format(SHODAN_MESSAGE), username="BOTNAME", icon_emoji="YOUR_EMOJI")
+        slack.chat.post_message('#random', "Here is a Random host with a screenshot from SHODAN {}".format(SHODAN_MESSAGE), username="BOTNAME", icon_emoji="YOUR_EMOJI")
 except Exception as e:
         print 'Error: %s' % e
         sys.exit(1)
