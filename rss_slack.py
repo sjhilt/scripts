@@ -38,8 +38,8 @@ while count < len(rss['entries']):
         # if from the last hour
         if date_time in published:
                 # Title, description, and link to be posted
-                title = rss['entries'][count]['title']
-                desc = rss['entries'][count]['description']
+                title = rss['entries'][count]['title'].encode('ascii', 'ignore')
+                desc = rss['entries'][count]['description'].encode('ascii', 'ignore')
                 link = rss['entries'][count]['link']
                 # send message to slack
                 slack.chat.post_message('#random', "_*{}*_\n{}\n{}\n".format(title,desc,link), username="RSSbot", icon_emoji=":rage:")
