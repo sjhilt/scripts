@@ -15,7 +15,7 @@ data = json.loads(response)
 hour = strftime("%I").lstrip('0')
 #24 hour time needed for am/pm matching of the string from hc911.org
 t4hour = strftime("%H")
-if its over 11, then its pm else am
+#if its over 11, then its pm else am
 if t4hour > 11:
         mn = "pm"
 else:
