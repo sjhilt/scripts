@@ -22,12 +22,10 @@ year = time.strftime("%Y")
 hour = time.strftime("%H")
 
 if int(time.strftime("%H"))+4 < 23:
-	date_time = ", {:02d} {} {} {:02d}:".format(int(day), month, year, int(hour) + 4)
-else: 
-	hour = 24 - int(hour)
-	day = day + 1
-	print hour
-	date_time = ", {:02d} {} {} {:02d}:".format(day, month, year, hour)
+        date_time = ", {:02d} {} {} {:02d}:".format(int(day), month, year, int(hour) + 4)
+else:
+        hour = abs(24 - (int(hour) + 4))
+        date_time = ", {:02d} {} {} {:02d}:".format(int(day)+1, month, year, int(hour))
 
 count = 0 
 # set a counter to 0 to loop through all the RSS feed entries
