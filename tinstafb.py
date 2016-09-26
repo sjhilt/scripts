@@ -34,7 +34,7 @@ if c.open(host):
     time.sleep(5)
     # right tap off
     c.write_tag('B3:0/1', 0)
-  elif command == "lock"
+  elif command == "lock":
     #lock the HMI screen so no more beer can be poured until unlocked
     c.write_tag('B3:0/2', 1)
   else:
