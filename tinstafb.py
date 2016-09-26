@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # Author: Stephen J. Hilt
-#	pour beer from Talos' Automated Kegorator 
-# from DerbyCon 6.0
-# There Is No Such Thing As Free Beer 1.0
+# Purpose: 
+#	Pour beer from Talos' Automated Kegorator from DerbyCon 6.0
+#
+# 	There Is No Such Thing As Free Beer 1.0
 #
 #########################################################
 from pycomm.ab_comm.slc import Driver as SlcDriver
