@@ -4,10 +4,10 @@ number_leaf_total=input("What is the total of the leaf line? ")
 number_caterpillar=input("What is the total of line 2 with the caterpillars? ")
 number_apple=input("What is the total of the apple line? ")
 
-if input("What is the total number of leafs on the 4th line's branch? ") == 6: 
+if input("What is the total number of leaves on the 4th line's branch? ") == 6: 
 	# Answer will be 5, 5 leafs per branch
 	leaf_total = number_leaf_total / 3 
-	print("Leaf Line where each branch is worth %s") % leaf_total
+	print("Leaves Line where each branch is worth %s") % leaf_total
 	# if 9 the answer will be 3
 	caterpillar_total = number_caterpillar / 3 
 	print("Each caterpillar is Worth %s") % caterpillar_total
