@@ -12,7 +12,7 @@ if input("What is the total number of leaves on the 4th line's branch? ") == 6:
 	caterpillar_total = number_caterpillar / 3 
 	print("Each caterpillar is Worth %s") % caterpillar_total
 	# if 30 answer will be 9
-	apple_total = (30 - (caterpillar_total)) / 3
+	apple_total = (number_apple - (caterpillar_total)) / 3
 	print("Each Apple is worth %s") % apple_total 
 	final_answer = caterpillar_total * ((leaf_total + 1) + caterpillar_total) - (apple_total + caterpillar_total)
 	# Answer is 15 given all the other stuff is what Jess posted :)
