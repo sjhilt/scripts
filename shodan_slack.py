@@ -1,63 +1,77 @@
 #!/usr/bin/python
+import requests
 import shodan
 import sys
 import os
-import urllib
+import time
 from slacker import Slacker
 from random import randint
 from PIL import Image
-
-
+import urllib
 
 # Configuration
 API_KEY = "SHODAN_API_KEY"
-slack = Slacker('SLACK_API_KEY')
-#
-# to perform the shodan output, returns the shodan result (IP) as well as a formated string
+API = "SLACK_API_KEY"
+slack = Slacker(API)
+
+# Fixed to allow for the new method that allows only the first 10 pages
+# Pulls a random image from shodan, 
 def shodanMessage():
         # Perform the search
-        total = api.count('has_screenshot:true')['total']
-        page = randint(1, total / 100 + 1)
-        results = api.search('has_screenshot:true', page=page)
+        page = randint(1, 10)  # Only the first 10 pages can be accessed in a random pattern
+        results = api.search('has_screenshot:true -port:3388,3389', page=page)
         num_results = len(results['matches'])
         num = randint(0,num_results)
         shodan_result = results['matches'][num]['ip_str']
         image = results['matches'][num]['opts']['screenshot']['data']
         shodan_result = results['matches'][randint(0,num_results)]['ip_str']
-        url = "https://www.shodan.io/host/{}/image".format(shodan_result)
+        url = "https://beta.shodan.io/host/{}/image".format(shodan_result)
         return url, image, shodan_result
-
-#
-# Checks to see if the image is black, or tuns out if its majority one color
-# the value None appears when the image has more than just gray tones in it. 
+#Tests to see if the image is mostly black 
 def isBlack():
-        # Loop until we find an image thats not all black
         while True:
                 SHODAN_MESSAGE, image, shodan_result = shodanMessage()
                 f = open ('00000001.jpg', 'wb')
-                # write image to file, for color analysis
                 f.write(image.decode('base64'))
                 f.close()
-                # open the local image for analysis
                 img = Image.open("00000001.jpg")
-                # get the colors in a list
-                clrs = img.getcolors()
-                if "None" in str(clrs):
-                        return SHODAN_MESSAGE
+                nblack=0
+                #Returna a tuple of the RGB data for each pixel 
+                pixels = img.getdata()
+                # for each pixel that is in the image. 
+                for pixel in pixels:
+                    # Sum up the 3 tuples 
+                    sum_pixel = sum(pixel)
+                    # Devide the number by 3, for the average of the three tuples 
+                    avg_pixel = sum_pixel / 3
+                    # If the average is "dark", which is an random picked value by me. 
+                    # In this case while playing with RGB values I deteremind that if the average
+                    # was 50 then the pixel is "dark" 
+                    if avg_pixel < 50: 
+                        nblack +=1
+                # how many pixels 
+                n = len(pixels)
+                # if the image is more than 90% "dark" 
+                if (nblack / float(n)) > 0.9: 
+                    # print value that its mostly dark and the link just incase for testing 
+                    print "Mostly Black? %s" % SHODAN_MESSAGE
+                    # sleep for 5 seconds so we don't time out on the Shodan API
+                    time.sleep(5)
+                # if the value is < 90% dark lets go ahead and print it anyway. 
+                else:
+                    return SHODAN_MESSAGE
 
-#
-# Send the slack messsage
 def slackSend(SHODAN_MESSAGE):
-        slack.chat.post_message('#random', "Here is a Random host with a screenshot from SHODAN {}".format(SHODAN_MESSAGE), username="BOTNAME", icon_emoji=":smile:")
+        slack.chat.post_message('#random', u'Enjoy a random host with an image from SHODAN\u2122 {}'.format(SHODAN_MESSAGE), username="dc423bot", icon_emoji=":fail_rail:")
+
 
 try:
         # Setup the api
         api = shodan.Shodan(API_KEY)
-        # send the non single tone image to slack channel
         slackSend(isBlack())
-        # remve the image we downloaded 
         os.remove('00000001.jpg')
 
 except Exception as e:
         print 'Error: %s' % e
         sys.exit(1)
+
