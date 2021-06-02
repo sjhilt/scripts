@@ -19,6 +19,7 @@ slack = Slacker(API)
 def shodanMessage():
         # Perform the search
         page = randint(1, 10)  # Only the first 10 pages can be accessed in a random pattern
+        # Check
         results = api.search('has_screenshot:true -port:3388,3389', page=page)
         num_results = len(results['matches'])
         num = randint(0,num_results)
@@ -36,7 +37,7 @@ def isBlack():
                 f.close()
                 img = Image.open("00000001.jpg")
                 nblack=0
-                #Returna a tuple of the RGB data for each pixel 
+                #Returns a tuple of the RGB data for each pixel 
                 pixels = img.getdata()
                 # for each pixel that is in the image. 
                 for pixel in pixels:
@@ -60,17 +61,20 @@ def isBlack():
                 # if the value is < 90% dark lets go ahead and print it anyway. 
                 else:
                     return SHODAN_MESSAGE
-
+#Send a message to slack with a link to the image
 def slackSend(SHODAN_MESSAGE):
-        slack.chat.post_message('#random', u'Enjoy a random host with an image from SHODAN\u2122 {}'.format(SHODAN_MESSAGE), username="dc423bot", icon_emoji=":fail_rail:")
+        slack.chat.post_message('#random', u'Enjoy a random host with an image from SHODAN\u2122 {}'.format(SHODAN_MESSAGE), username="BOT_NAME_HERE", icon_emoji=":fail_rail:")
 
-
+#MAIN 
+#Try statement incase there is an error 
 try:
         # Setup the api
         api = shodan.Shodan(API_KEY)
+        # Check to see if iamge is black
         slackSend(isBlack())
+        # Remove the image we created during the above processes to be clean
         os.remove('00000001.jpg')
-
+# Print Error message if there was an error and exit with an error. 
 except Exception as e:
         print 'Error: %s' % e
         sys.exit(1)
