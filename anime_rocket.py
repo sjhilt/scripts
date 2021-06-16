@@ -10,4 +10,4 @@ url = 'https://animechan.vercel.app/api/random'
 headers = {'user-agent':'My Library (YOUR GITHUB PAGE)'}
 response = requests.get(url, headers=headers)
 results = response.json()
-rocket.chat_post_message("%s -- %s" % (results['quote'],results['character']), channel='GENERAL', alias='%s' % results['anime'], emoji=':japan:').json()
+rocket.chat_post_message("\"%s\" -- %s" % (results['quote'],results['character']), channel='GENERAL', alias='%s' % results['anime'], emoji=':japan:').json()
