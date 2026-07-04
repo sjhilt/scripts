@@ -4,7 +4,7 @@
 #   how replaying of Modbus packets work.
 #
 # Updated to support selecting the outgoing NIC by binding to a local source IP,
-# plus independent random blink patterns for coils/buttons 0 and 1.
+# independent random blink patterns, and synchronized Morse-code blinking.
 # For use with Python 3
 #########################################################
 
@@ -17,6 +17,63 @@ import time
 
 
 DEFAULT_COILS = (0, 1)
+
+MORSE_CODE = {
+    "A": ".-",
+    "B": "-...",
+    "C": "-.-.",
+    "D": "-..",
+    "E": ".",
+    "F": "..-.",
+    "G": "--.",
+    "H": "....",
+    "I": "..",
+    "J": ".---",
+    "K": "-.-",
+    "L": ".-..",
+    "M": "--",
+    "N": "-.",
+    "O": "---",
+    "P": ".--.",
+    "Q": "--.-",
+    "R": ".-.",
+    "S": "...",
+    "T": "-",
+    "U": "..-",
+    "V": "...-",
+    "W": ".--",
+    "X": "-..-",
+    "Y": "-.--",
+    "Z": "--..",
+    "0": "-----",
+    "1": ".----",
+    "2": "..---",
+    "3": "...--",
+    "4": "....-",
+    "5": ".....",
+    "6": "-....",
+    "7": "--...",
+    "8": "---..",
+    "9": "----.",
+    ".": ".-.-.-",
+    ",": "--..--",
+    "?": "..--..",
+    "'": ".----.",
+    "!": "-.-.--",
+    "/": "-..-.",
+    "(": "-.--.",
+    ")": "-.--.-",
+    "&": ".-...",
+    ":": "---...",
+    ";": "-.-.-.",
+    "=": "-...-",
+    "+": ".-.-.",
+    "-": "-....-",
+    "_": "..--.-",
+    '"': ".-..-.",
+    "$": "...-..-",
+    "@": ".--.-.",
+}
 
 
 def build_write_single_coil(coil, enabled, transaction_id=2, unit_id=1):
@@ -58,6 +115,8 @@ def parse_args():
             "  python3 py3_modturnt.py 192.168.0.3 --source-ip 192.168.0.22\n"
             "  python3 py3_modturnt.py 192.168.0.3 -s 192.168.0.22 --count 20\n"
             "  python3 py3_modturnt.py 192.168.0.3 -s 192.168.0.22 --mode sequential --once\n"
+            "  python3 py3_modturnt.py 192.168.0.3 -s 192.168.0.22 --mode morse --message SOS\n"
+            "  python3 py3_modturnt.py 192.168.0.3 -s 192.168.0.22 --morse-mode --message SOS --morse-repeat 0 --morse-pause 10\n"
             "  python3 py3_modturnt.py 192.168.0.3 -s 192.168.0.22 --check-only"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -80,11 +139,11 @@ def parse_args():
     )
     parser.add_argument(
         "--mode",
-        choices=("random", "sequential"),
+        choices=("random", "sequential", "morse"),
         default="random",
         help=(
-            "Blink mode: independent random per-coil timing or original sequential "
-            "pulse pattern (default: random)"
+            "Blink mode: independent random per-coil timing, original sequential "
+            "pulse pattern, or synchronized Morse code (default: random)"
         ),
     )
     parser.add_argument(
@@ -138,6 +197,36 @@ def parse_args():
         help="Sequential mode seconds to wait between Modbus writes (default: 1)",
     )
     parser.add_argument(
+        "--morse-mode",
+        action="store_true",
+        help="Shortcut alias for --mode morse",
+    )
+    parser.add_argument(
+        "--message",
+        help="Message to blink as Morse code when using --mode morse or --morse-mode",
+    )
+    parser.add_argument(
+        "--morse-unit",
+        type=float,
+        default=0.25,
+        help=(
+            "Morse timing unit in seconds. Dot=1 unit, dash=3 units, "
+            "letter gap=3 units, word gap=7 units (default: 0.25)"
+        ),
+    )
+    parser.add_argument(
+        "--morse-repeat",
+        type=int,
+        default=1,
+        help="Number of times to repeat the Morse message; use 0 to repeat forever (default: 1)",
+    )
+    parser.add_argument(
+        "--morse-pause",
+        type=float,
+        default=10.0,
+        help="Seconds to pause between repeated Morse messages (default: 10)",
+    )
+    parser.add_argument(
         "--timeout",
         type=float,
         default=5.0,
@@ -155,6 +244,9 @@ def parse_args():
     )
     args = parser.parse_args()
 
+    if args.morse_mode:
+        args.mode = "morse"
+
     if args.count is not None and args.count < 1:
         parser.error("--count must be 1 or greater")
     if args.min_on < 0 or args.max_on < 0 or args.min_gap < 0 or args.max_gap < 0:
@@ -163,6 +255,18 @@ def parse_args():
         parser.error("--min-on cannot be greater than --max-on")
     if args.min_gap > args.max_gap:
         parser.error("--min-gap cannot be greater than --max-gap")
+    if args.mode == "morse":
+        if not args.message:
+            parser.error("--message is required when using --mode morse")
+        if args.morse_unit <= 0:
+            parser.error("--morse-unit must be greater than 0")
+        if args.morse_repeat < 0:
+            parser.error("--morse-repeat must be 0 or greater")
+        if args.morse_pause < 0:
+            parser.error("--morse-pause cannot be negative")
+        unsupported = sorted({ch for ch in args.message.upper() if ch != " " and ch not in MORSE_CODE})
+        if unsupported:
+            parser.error("unsupported Morse character(s): {}".format(" ".join(unsupported)))
 
     return args
 
@@ -194,6 +298,12 @@ def write_coil(sock, coil, enabled, transaction_id=2):
     print("coil {} -> {}".format(coil, "ON" if enabled else "OFF"))
 
 
+def write_coils(sock, coils, enabled):
+    """Write the same state to all selected coils/buttons."""
+    for coil in coils:
+        write_coil(sock, coil, enabled)
+
+
 def run_sequential(sock, coils, interval, once):
     if len(coils) < 2:
         raise ValueError("sequential mode needs at least two coils")
@@ -214,12 +324,7 @@ def run_sequential(sock, coils, interval, once):
 
 
 def run_random(sock, coils, count, min_on, max_on, min_gap, max_gap):
-    """Run independent per-coil random blink schedules.
-
-    Each coil keeps its own state and next toggle time. That means coil 0 can be
-    ON while coil 1 turns ON/OFF independently instead of both coils following a
-    single shared blink cadence.
-    """
+    """Run independent per-coil random blink schedules."""
     now = time.monotonic()
     states = {coil: False for coil in coils}
     next_toggle = {
@@ -249,8 +354,6 @@ def run_random(sock, coils, count, min_on, max_on, min_gap, max_gap):
             next_toggle[coil] = time.monotonic() + random.uniform(min_gap, max_gap)
         else:
             if count is not None and blink_count >= count:
-                # Do not start any new blinks after count is reached. Move this
-                # coil far into the future while other ON coils finish turning off.
                 next_toggle[coil] = float("inf")
                 continue
 
@@ -260,6 +363,73 @@ def run_random(sock, coils, count, min_on, max_on, min_gap, max_gap):
             print("blink {}: coil {} ON for {:.2f}s".format(blink_count, coil, on_time))
             write_coil(sock, coil, True)
             next_toggle[coil] = time.monotonic() + on_time
+
+
+def print_morse_preview(message):
+    parts = []
+    for word in message.upper().split(" "):
+        letters = [MORSE_CODE[ch] for ch in word if ch in MORSE_CODE]
+        parts.append(" ".join(letters))
+    print("Morse: {}".format(" / ".join(parts)))
+
+
+def blink_symbol(sock, coils, symbol, unit):
+    duration = unit if symbol == "." else unit * 3
+    print("{} ({:.2f}s)".format("DOT" if symbol == "." else "DASH", duration))
+    write_coils(sock, coils, True)
+    time.sleep(duration)
+    write_coils(sock, coils, False)
+
+
+def run_morse(sock, coils, message, unit, repeat, pause):
+    """Blink a message in Morse code with all selected coils/buttons synchronized.
+
+    Standard timing:
+      dot = 1 unit ON
+      dash = 3 units ON
+      gap between dots/dashes in a letter = 1 unit OFF
+      gap between letters = 3 units OFF
+      gap between words = 7 units OFF
+    """
+    message = message.upper()
+    print(
+        "Synchronized Morse mode on coils {} with unit {:.2f}s".format(
+            ",".join(map(str, coils)), unit
+        )
+    )
+    print_morse_preview(message)
+
+    repeat_number = 0
+    repeat_forever = repeat == 0
+
+    while repeat_forever or repeat_number < repeat:
+        repeat_number += 1
+        if repeat_forever:
+            print("Morse repeat {} (forever; Ctrl+C to stop)".format(repeat_number))
+        elif repeat > 1:
+            print("Morse repeat {}/{}".format(repeat_number, repeat))
+
+        words = message.split(" ")
+        for word_index, word in enumerate(words):
+            letters = [ch for ch in word if ch in MORSE_CODE]
+            for letter_index, ch in enumerate(letters):
+                pattern = MORSE_CODE[ch]
+                print("letter {}: {}".format(ch, pattern))
+
+                for symbol_index, symbol in enumerate(pattern):
+                    blink_symbol(sock, coils, symbol, unit)
+                    if symbol_index < len(pattern) - 1:
+                        time.sleep(unit)
+
+                if letter_index < len(letters) - 1:
+                    time.sleep(unit * 3)
+
+            if word_index < len(words) - 1:
+                time.sleep(unit * 7)
+
+        if repeat_forever or repeat_number < repeat:
+            print("Pausing {:.2f}s before next Morse repeat".format(pause))
+            time.sleep(pause)
 
 
 def main():
@@ -278,6 +448,8 @@ def main():
 
         if args.mode == "sequential":
             run_sequential(sock, args.coils, args.interval, args.once)
+        elif args.mode == "morse":
+            run_morse(sock, args.coils, args.message, args.morse_unit, args.morse_repeat, args.morse_pause)
         else:
             run_random(sock, args.coils, args.count, args.min_on, args.max_on, args.min_gap, args.max_gap)
 
